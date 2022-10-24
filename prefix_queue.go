@@ -381,6 +381,14 @@ func (pq *PrefixQueue) Drop() error {
 	return os.RemoveAll(pq.DataDir)
 }
 
+func getQueueFromQVal(qval []byte) (*queue, error) {
+	// Decode gob to our queue type.
+	q := &queue{}
+	buffer := bytes.NewBuffer(qval)
+	dec := gob.NewDecoder(buffer)
+	return q, dec.Decode(q)
+}
+
 // getQueue gets the unique queue for the given prefix.
 func (pq *PrefixQueue) getQueue(prefix []byte) (*queue, error) {
 	// Try to get the queue gob value.
@@ -390,12 +398,7 @@ func (pq *PrefixQueue) getQueue(prefix []byte) (*queue, error) {
 	} else if err != nil {
 		return nil, err
 	}
-
-	// Decode gob to our queue type.
-	q := &queue{}
-	buffer := bytes.NewBuffer(qval)
-	dec := gob.NewDecoder(buffer)
-	return q, dec.Decode(q)
+	return getQueueFromQVal(qval)
 }
 
 // getOrCreateQueue gets the unique queue for the given prefix. If one does not
@@ -408,12 +411,7 @@ func (pq *PrefixQueue) getOrCreateQueue(prefix []byte) (*queue, error) {
 	} else if err != nil {
 		return nil, err
 	}
-
-	// Decode gob to our queue type.
-	q := &queue{}
-	buffer := bytes.NewBuffer(qval)
-	dec := gob.NewDecoder(buffer)
-	return q, dec.Decode(q)
+	return getQueueFromQVal(qval)
 }
 
 // savePrefixQueue saves the given queue for the given prefix.
