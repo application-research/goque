@@ -114,16 +114,24 @@ func TestPrefixQueueEnqueueManyPrefix(t *testing.T) {
 			t.Errorf("Expected queue size of 10, got %d", len)
 		}
 	}
+	queueCountMap, err := pq.PrefixQueueCount()
+	if err != nil {
+		t.Error(err)
+	}
+
 	for i := 1; i <= 10; i++ {
-		len, err := pq.PrefixLengthString("prefix" + strconv.Itoa(i))
+		prefix := "prefix" + strconv.Itoa(i)
+		len, err := pq.PrefixLengthString(prefix)
 		if err != nil {
 			t.Error(err)
 		}
 		if len != 10 {
 			t.Errorf("Expected queue size of 10, got %d", len)
 		}
+		if len != queueCountMap[prefix] {
+			t.Errorf("Expected queue size of 10, got %d", len)
+		}
 	}
-
 }
 
 func TestPrefixQueueDequeue(t *testing.T) {

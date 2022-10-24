@@ -10,6 +10,7 @@ import (
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 // prefixDelimiter defines the delimiter used to separate a prefix from an
@@ -486,10 +487,34 @@ func (pq *PrefixQueue) init() error {
 	return nil
 }
 
+//PrefixQueueCount returns a map from prefixes in the queue to their counts
+//by iterating over the leveldb database
+func (pq *PrefixQueue) PrefixQueueCount() (map[string]uint64, error) {
+	queueCount := make(map[string]uint64)
+	prefix := []byte("data:")
+
+	iter := pq.db.NewIterator(util.BytesPrefix(prefix), nil)
+	for iter.Next() {
+		key := iter.Key()
+		q, err := getQueueFromQVal(iter.Value())
+		if err != nil {
+			return nil, err
+		}
+		mapKey := string(key[len(prefix):])
+		queueCount[mapKey] = q.Length()
+	}
+	iter.Release()
+	err := iter.Error()
+	if err != nil {
+		return nil, err
+	}
+	return queueCount, nil
+}
+
 // generateKeyPrefixData generates a data key using the given prefix. This key
 // should be used to get the stored queue struct for the given prefix.
 func generateKeyPrefixData(prefix []byte) []byte {
-	return append(prefix, []byte(":data")...)
+	return append([]byte("data:"), prefix...)
 }
 
 // generateKeyPrefixID generates a key using the given prefix and ID.
