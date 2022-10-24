@@ -3,6 +3,7 @@ package goque
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -83,6 +84,46 @@ func TestPrefixQueueEnqueue(t *testing.T) {
 	if pq.Length() != 10 {
 		t.Errorf("Expected queue size of 10, got %d", pq.Length())
 	}
+}
+
+func TestPrefixQueueEnqueueManyPrefix(t *testing.T) {
+	file := fmt.Sprintf("test_db_%d", time.Now().UnixNano())
+	pq, err := OpenPrefixQueue(file)
+	if err != nil {
+		t.Error(err)
+	}
+	defer pq.Drop()
+
+	for i := 1; i <= 10; i++ {
+		for j := 1; j <= 10; j++ {
+			if _, err = pq.EnqueueString("prefix"+strconv.Itoa(i), fmt.Sprintf("value for item %d", j)); err != nil {
+				t.Error(err)
+			}
+		}
+	}
+
+	if pq.Length() != 100 {
+		t.Errorf("Expected queue size of 100, got %d", pq.Length())
+	}
+	for i := 1; i <= 10; i++ {
+		len, err := pq.PrefixLength([]byte("prefix" + strconv.Itoa(i)))
+		if err != nil {
+			t.Error(err)
+		}
+		if len != 10 {
+			t.Errorf("Expected queue size of 10, got %d", len)
+		}
+	}
+	for i := 1; i <= 10; i++ {
+		len, err := pq.PrefixLengthString("prefix" + strconv.Itoa(i))
+		if err != nil {
+			t.Error(err)
+		}
+		if len != 10 {
+			t.Errorf("Expected queue size of 10, got %d", len)
+		}
+	}
+
 }
 
 func TestPrefixQueueDequeue(t *testing.T) {

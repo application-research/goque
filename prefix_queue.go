@@ -28,6 +28,31 @@ func (q *queue) Length() uint64 {
 	return q.Tail - q.Head
 }
 
+//PrefixLength returns the total number of items in a queue given its prefix
+func (pq *PrefixQueue) PrefixLength(prefix []byte) (uint64, error) {
+	pq.RLock()
+	defer pq.RUnlock()
+
+	// Check if queue is closed.
+	if !pq.isOpen {
+		return 0, ErrDBClosed
+	}
+
+	// Get the queue for this prefix.
+	q, err := pq.getQueue(prefix)
+	if err != nil {
+		return 0, err
+	}
+
+	return q.Length(), nil
+}
+
+// PrefixLengthString is a helper function for PrefixLength that accepts the prefix and
+// value as a string rather than a byte slice.
+func (pq *PrefixQueue) PrefixLengthString(prefix string) (uint64, error) {
+	return pq.PrefixLength([]byte(prefix))
+}
+
 // PrefixQueue is a standard FIFO (first in, first out) queue that separates
 // each given prefix into its own queue.
 type PrefixQueue struct {
